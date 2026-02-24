@@ -60,14 +60,19 @@ jobs:
           echo "name=$NAME" >> $GITHUB_OUTPUT
           echo "tarball=$TARBALL" >> $GITHUB_OUTPUT
 
-      - name: Create tar.gz (exclude git + caches)
+      - name: Create tar.gz (clean staging)
         run: |
-          tar --exclude=".git" \
-              --exclude=".github" \
-              --exclude="__pycache__" \
-              --exclude=".pytest_cache" \
-              --exclude=".venv" \
-              -czf "${{ steps.vars.outputs.tarball }}" .
+           STAGE="$(mktemp -d)"
+           rsync -a \
+             --exclude ".git" \
+             --exclude ".github" \
+             --exclude "__pycache__" \
+             --exclude ".pytest_cache" \
+             --exclude ".venv" \
+             --exclude "*.pyc" \
+             --exclude "*.pyo" \
+             . "$STAGE/"
+           tar -C "$STAGE" -czf "${{ steps.vars.outputs.tarball }}" .
 
       - name: Upload tarball artifact
         uses: actions/upload-artifact@v4
